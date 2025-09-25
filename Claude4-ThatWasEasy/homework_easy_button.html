@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework Easy Button</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .upload-area {
+            border: 3px dashed #ccc;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+            transform: scale(1.02);
+        }
+
+        .upload-area.file-uploaded {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 15px;
+            transition: color 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: #667eea;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-text {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .file-info {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .easy-button {
+            background: linear-gradient(145deg, #ff6b6b, #ee5a52);
+            border: none;
+            border-radius: 50px;
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+            margin: 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            min-width: 200px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .easy-button:enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .easy-button:hover:enabled {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4);
+        }
+
+        .easy-button:active:enabled {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .easy-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.6s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .easy-button:active:enabled::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            color: #2e7d32;
+        }
+
+        .result.processing {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #ffc107;
+            color: #f57c00;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f57c00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .staples-logo {
+            color: #ff0000;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Homework Helper</h1>
+        <p class="subtitle">Upload your homework and make it easy!</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">
+                <strong>Click to upload</strong> or drag and drop your homework file here
+            </div>
+            <input type="file" class="file-input" id="fileInput" accept=".pdf,.doc,.docx,.txt,.jpg,.png">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <strong>📄 File uploaded:</strong> <span id="fileName"></span><br>
+            <strong>📊 Size:</strong> <span id="fileSize"></span><br>
+            <strong>📅 Last modified:</strong> <span id="fileDate"></span>
+        </div>
+
+        <div class="staples-logo">STAPLES</div>
+        <button class="easy-button" id="easyButton" disabled>
+            That was Easy!
+        </button>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        // Backend API client
+        class HomeworkAPI {
+            static BASE_URL = 'http://localhost:5000';
+            
+            static async uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${this.BASE_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
+                }
+                
+                return await response.json();
+            }
+            
+            static async processHomework(fileId) {
+                const response = await fetch(`${this.BASE_URL}/process/${fileId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Processing failed');
+                }
+                
+                return await response.json();
+            }
+        }
+
+        // Frontend JavaScript
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileDate = document.getElementById('fileDate');
+        const easyButton = document.getElementById('easyButton');
+        const result = document.getElementById('result');
+
+        let uploadedFile = null;
+        let uploadedFileId = null;
+
+        // Upload area click handler
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        // File upload handler
+        async function handleFileUpload(file) {
+            uploadedFile = file;
+            
+            try {
+                // Show uploading state
+                uploadArea.querySelector('.upload-text').innerHTML = '<strong>Uploading...</strong>';
+                
+                // Upload file to backend
+                const uploadResponse = await HomeworkAPI.uploadFile(file);
+                uploadedFileId = uploadResponse.file_id;
+                
+                // Update UI on successful upload
+                uploadArea.classList.add('file-uploaded');
+                uploadArea.querySelector('.upload-icon').textContent = '✅';
+                uploadArea.querySelector('.upload-text').innerHTML = '<strong>File uploaded to server!</strong>';
+                
+                // Show file info
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileDate.textContent = new Date(file.lastModified).toLocaleDateString();
+                fileInfo.classList.add('show');
+                
+                // Enable easy button
+                easyButton.disabled = false;
+                
+                // Hide previous results
+                result.classList.remove('show');
+                
+            } catch (error) {
+                // Handle upload error
+                uploadArea.classList.remove('file-uploaded');
+                uploadArea.querySelector('.upload-icon').textContent = '❌';
+                uploadArea.querySelector('.upload-text').innerHTML = `<strong>Upload failed:</strong> ${error.message}`;
+                
+                // Reset state
+                uploadedFile = null;
+                uploadedFileId = null;
+                easyButton.disabled = true;
+                fileInfo.classList.remove('show');
+            }
+        }
+
+        // Easy button click handler
+        easyButton.addEventListener('click', async () => {
+            if (!uploadedFileId) return;
+            
+            // Show processing state
+            result.className = 'result processing show';
+            result.innerHTML = '<div class="loading"></div>Processing your homework on the server...';
+            easyButton.disabled = true;
+            
+            try {
+                // Call backend API to process homework
+                const response = await HomeworkAPI.processHomework(uploadedFileId);
+                
+                if (response.success) {
+                    result.className = 'result success show';
+                    result.innerHTML = `
+                        ${response.message}<br><br>
+                        <strong>⏱️ Processing time:</strong> ${response.processing_time}<br>
+                        <strong>🔧 Improvements made:</strong> ${response.improvements}<br>
+                        <strong>📊 Confidence score:</strong> ${response.confidence_score}%<br>
+                        <strong>🆔 File ID:</strong> ${response.file_id.substring(0, 8)}...
+                    `;
+                    
+                    // Play success sound (if available)
+                    try {
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmkeElOq5O2zZSdZuft5STJFdU4qZnJYb1amaEh+RCkpXaZKPXVTFGF3NzZnFmJaJHFdHTZhExV3//PQTSYfNyRZJUoyWjKCQAeT4A==');
+                        audio.play();
+                    } catch (e) {
+                        // Sound not available, continue silently
+                    }
+                }
+            } catch (error) {
+                result.className = 'result show';
+                result.style.background = 'rgba(244, 67, 54, 0.1)';
+                result.style.border = '1px solid #f44336';
+                result.style.color = '#d32f2f';
+                result.innerHTML = `❌ ${error.message}`;
+            }
+            
+            easyButton.disabled = false;
+        });
+
+        // Utility function to format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

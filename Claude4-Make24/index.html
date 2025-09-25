@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make 24 - Online Multiplayer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Icon components
+        const Shuffle = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16,3 21,3 21,8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21,16 21,21 16,21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+        );
+
+        const Users = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="m22 21-2-2"></path>
+                <path d="m16 16-2-2"></path>
+            </svg>
+        );
+
+        const Trophy = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55.47.98.97 1.21C11.44 18.46 12 19.2 12 20"></path>
+                <path d="M14 14.66V17c0 .55-.47.98-.97 1.21C12.56 18.46 12 19.2 12 20"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
+        );
+
+        const Plus = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+            </svg>
+        );
+
+        const Wifi = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13a10 10 0 0 1 14 0"></path>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"></path>
+                <path d="M12 20h.01"></path>
+            </svg>
+        );
+
+        const WifiOff = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+                <path d="M8.5 16.5a5 5 0 0 1 7 0"></path>
+                <path d="M12 20h.01"></path>
+            </svg>
+        );
+
+        const Copy = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+            </svg>
+        );
+
+        const Eye = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        );
+
+        const User = ({ className = "w-4 h-4" }) => (
+            <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        );
+
+        const Make24Multiplayer = () => {
+            const [gameState, setGameState] = useState('menu');
+            const [playerName, setPlayerName] = useState('');
+            const [roomCode, setRoomCode] = useState('');
+            const [currentPlayer, setCurrentPlayer] = useState(null);
+            const [room, setRoom] = useState(null);
+            const [isHost, setIsHost] = useState(false);
+            const [connectionStatus, setConnectionStatus] = useState('connecting');
+
+            const simulateConnection = () => {
+                setConnectionStatus('connecting');
+                setTimeout(() => {
+                    setConnectionStatus('connected');
+                }, 1000 + Math.random() * 2000);
+            };
+
+            const simulateNetworkDelay = (callback, delay = 100 + Math.random() * 200) => {
+                setTimeout(callback, delay);
+            };
+
+            const generateRoomCode = () => {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let result = '';
+                for (let i = 0; i < 6; i++) {
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result;
+            };
+
+            const generateNumbers = () => {
+                const numbers = [];
+                for (let i = 0; i < 4; i++) {
+                    numbers.push(Math.floor(Math.random() * 13) + 1);
+                }
+                return numbers;
+            };
+
+            const findSolutions = (nums) => {
+                const [a, b, c, d] = nums;
+                const foundSolutions = [];
+                
+                const patterns = [
+                    { expr: `(${a} + ${b}) × (${c} + ${d})`, calc: (a + b) * (c + d) },
+                    { expr: `(${a} - ${b}) × (${c} + ${d})`, calc: (a - b) * (c + d) },
+                    { expr: `(${a} + ${b}) × ${c} - ${d}`, calc: (a + b) * c - d },
+                    { expr: `(${a} + ${b}) × ${c} + ${d}`, calc: (a + b) * c + d },
+                    { expr: `${a} × ${b} + ${c} + ${d}`, calc: a * b + c + d },
+                    { expr: `${a} × ${b} - ${c} - ${d}`, calc: a * b - c - d },
+                    { expr: `${a} × (${b} + ${c}) - ${d}`, calc: a * (b + c) - d },
+                    { expr: `${a} × (${b} + ${c}) + ${d}`, calc: a * (b + c) + d },
+                    { expr: `(${a} + ${b} + ${c}) × ${d}`, calc: (a + b + c) * d },
+                ];
+
+                patterns.forEach(pattern => {
+                    if (Math.abs(pattern.calc - 24) < 0.0001) {
+                        foundSolutions.push(pattern.expr);
+                    }
+                });
+
+                return foundSolutions;
+            };
+
+            const createRoom = () => {
+                if (!playerName.trim()) return;
+                
+                simulateConnection();
+                const newRoomCode = generateRoomCode();
+                const numbers = generateNumbers();
+                
+                simulateNetworkDelay(() => {
+                    const newRoom = {
+                        code: newRoomCode,
+                        host: playerName.trim(),
+                        players: [{
+                            name: playerName.trim(),
+                            id: 'player-' + Date.now(),
+                            score: 0,
+                            status: 'online',
+                            isSpectator: false
+                        }],
+                        spectators: [],
+                        currentRound: 1,
+                        numbers: numbers,
+                        solutions: findSolutions(numbers),
+                        roundWinner: null,
+                        gameStarted: false,
+                        showSolutions: false
+                    };
+                    
+                    setRoom(newRoom);
+                    setCurrentPlayer(newRoom.players[0]);
+                    setIsHost(true);
+                    setGameState('lobby');
+                });
+            };
+
+            const joinRoom = () => {
+                if (!playerName.trim() || !roomCode.trim()) return;
+                
+                simulateConnection();
+                
+                simulateNetworkDelay(() => {
+                    const numbers = generateNumbers();
+                    const mockRoom = {
+                        code: roomCode.toUpperCase(),
+                        host: 'Host Player',
+                        players: [
+                            {
+                                name: 'Host Player',
+                                id: 'host-123',
+                                score: Math.floor(Math.random() * 5),
+                                status: 'online',
+                                isSpectator: false
+                            },
+                            {
+                                name: playerName.trim(),
+                                id: 'player-' + Date.now(),
+                                score: 0,
+                                status: 'online',
+                                isSpectator: false
+                            }
+                        ],
+                        spectators: [],
+                        currentRound: Math.floor(Math.random() * 5) + 1,
+                        numbers: numbers,
+                        solutions: findSolutions(numbers),
+                        roundWinner: null,
+                        gameStarted: true,
+                        showSolutions: false
+                    };
+                    
+                    setRoom(mockRoom);
+                    setCurrentPlayer(mockRoom.players.find(p => p.name === playerName.trim()));
+                    setIsHost(false);
+                    setGameState('playing');
+                });
+            };
+
+            const claimSolution = () => {
+                if (!currentPlayer || currentPlayer.isSpectator) return;
+                
+                simulateNetworkDelay(() => {
+                    setRoom(prev => ({
+                        ...prev,
+                        roundWinner: currentPlayer.id,
+                        players: prev.players.map(p => 
+                            p.id === currentPlayer.id 
+                                ? { ...p, score: p.score + 1 }
+                                : p
+                        )
+                    }));
+                    
+                    setCurrentPlayer(prev => ({ ...prev, score: prev.score + 1 }));
+                });
+            };
+
+            const nextRound = () => {
+                if (!isHost) return;
+                
+                simulateNetworkDelay(() => {
+                    const numbers = generateNumbers();
+                    setRoom(prev => ({
+                        ...prev,
+                        currentRound: prev.currentRound + 1,
+                        numbers: numbers,
+                        solutions: findSolutions(numbers),
+                        roundWinner: null,
+                        showSolutions: false
+                    }));
+                });
+            };
+
+            const toggleSolutions = () => {
+                simulateNetworkDelay(() => {
+                    setRoom(prev => ({
+                        ...prev,
+                        showSolutions: !prev.showSolutions
+                    }));
+                });
+            };
+
+            const copyRoomCode = () => {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(room?.code || '');
+                }
+            };
+
+            const leaveRoom = () => {
+                setRoom(null);
+                setCurrentPlayer(null);
+                setIsHost(false);
+                setConnectionStatus('connected'); // Stay connected
+                setGameState('menu');
+            };
+
+            const startGame = () => {
+                if (!isHost) return;
+                simulateNetworkDelay(() => {
+                    setRoom(prev => ({
+                        ...prev,
+                        gameStarted: true
+                    }));
+                    setGameState('playing');
+                });
+            };
+
+            // Auto-connect when component mounts
+            useEffect(() => {
+                // Simulate initial connection
+                setTimeout(() => {
+                    setConnectionStatus('connected');
+                }, 1500 + Math.random() * 1000);
+            }, []);
+
+            // Menu Screen
+            if (gameState === 'menu') {
+                return (
+                    <div className="max-w-md mx-auto p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold text-gray-800 mb-2">Make 24</h1>
+                            <p className="text-gray-600">Online Multiplayer</p>
+                            <div className="flex items-center justify-center gap-2 mt-2">
+                                {connectionStatus === 'connected' ? (
+                                    <>
+                                        <Wifi className="w-4 h-4 text-green-500" />
+                                        <span className="text-green-500 text-sm">Online</span>
+                                    </>
+                                ) : connectionStatus === 'connecting' ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                                        <span className="text-yellow-500 text-sm">Connecting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <WifiOff className="w-4 h-4 text-red-500" />
+                                        <span className="text-red-500 text-sm">Offline</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="bg-white rounded-lg p-6 shadow-lg">
+                                <input
+                                    type="text"
+                                    value={playerName}
+                                    onChange={(e) => setPlayerName(e.target.value)}
+                                    placeholder="Enter your name"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                />
+                                
+                                <button
+                                    onClick={createRoom}
+                                    disabled={!playerName.trim() || connectionStatus !== 'connected'}
+                                    className="w-full py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mb-2"
+                                >
+                                    Create Room
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-lg p-6 shadow-lg">
+                                <input
+                                    type="text"
+                                    value={roomCode}
+                                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                                    placeholder="Enter room code"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                />
+                                
+                                <button
+                                    onClick={joinRoom}
+                                    disabled={!playerName.trim() || !roomCode.trim() || connectionStatus !== 'connected'}
+                                    className="w-full py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                >
+                                    Join Game
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Lobby Screen
+            if (gameState === 'lobby') {
+                return (
+                    <div className="max-w-2xl mx-auto p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+                        <div className="text-center mb-6">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Game Lobby</h1>
+                            <div className="flex items-center justify-center gap-4">
+                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow">
+                                    <span className="font-mono text-xl font-bold">{room?.code}</span>
+                                    <button onClick={copyRoomCode} className="p-1 hover:bg-gray-100 rounded">
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Wifi className="w-4 h-4 text-green-500" />
+                                    <span className="text-green-500 text-sm">Connected</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-6 shadow-lg mb-6">
+                            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                                <Users className="w-5 h-5" />
+                                Players ({room?.players.length})
+                            </h2>
+                            
+                            <div className="space-y-2">
+                                {room?.players.map(player => (
+                                    <div key={player.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-4 h-4" />
+                                            <span className="font-medium">{player.name}</span>
+                                            {player.name === room.host && (
+                                                <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">Host</span>
+                                            )}
+                                        </div>
+                                        <span className="text-gray-500">Ready</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            {isHost && (
+                                <button
+                                    onClick={startGame}
+                                    className="flex-1 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
+                                >
+                                    Start Game
+                                </button>
+                            )}
+                            
+                            <button
+                                onClick={leaveRoom}
+                                className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                            >
+                                Leave Room
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Game Screen
+            return (
+                <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+                    <div className="text-center mb-6">
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Make 24 - Round {room?.currentRound}</h1>
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow text-sm">
+                                <span>Room: {room?.code}</span>
+                                <button onClick={copyRoomCode} className="p-1 hover:bg-gray-100 rounded">
+                                    <Copy className="w-3 h-3" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-6 shadow-lg mb-6">
+                        <div className="text-center">
+                            <h2 className="text-xl font-semibold mb-4">Use these numbers to make 24:</h2>
+                            <div className="flex justify-center gap-4 mb-6">
+                                {room?.numbers.map((num, index) => (
+                                    <div
+                                        key={index}
+                                        className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold rounded-lg flex items-center justify-center shadow-lg"
+                                    >
+                                        {num}
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            <div className="flex justify-center gap-2">
+                                {isHost && (
+                                    <button
+                                        onClick={nextRound}
+                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                                    >
+                                        <Shuffle className="w-4 h-4" />
+                                        New Round
+                                    </button>
+                                )}
+                                
+                                <button
+                                    onClick={toggleSolutions}
+                                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                                >
+                                    {room?.showSolutions ? 'Hide Solutions' : 'Show Hint'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {room?.showSolutions && room?.solutions.length > 0 && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                            <h3 className="font-semibold text-yellow-800 mb-2">💡 Possible Solutions:</h3>
+                            <div className="space-y-1">
+                                {room.solutions.slice(0, 3).map((solution, index) => (
+                                    <div key={index} className="text-yellow-700 font-mono">
+                                        {solution} = 24
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-6 mb-6">
+                        <div className="bg-white rounded-lg p-6 shadow-md">
+                            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                                <Trophy className="w-5 h-5 text-yellow-500" />
+                                Leaderboard
+                            </h2>
+                            <div className="space-y-3">
+                                {room?.players
+                                    .sort((a, b) => b.score - a.score)
+                                    .map((player, index) => (
+                                    <div
+                                        key={player.id}
+                                        className={`flex items-center justify-between p-3 rounded-lg ${
+                                            index === 0 && player.score > 0 
+                                                ? 'bg-yellow-100 border-2 border-yellow-300' 
+                                                : 'bg-gray-50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {index === 0 && player.score > 0 && <Trophy className="w-4 h-4 text-yellow-500" />}
+                                            <span className="font-medium">{player.name}</span>
+                                            {room?.roundWinner === player.id && (
+                                                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                                                    Round winner!
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-xl font-bold text-blue-600">{player.score}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-6 shadow-md">
+                            <h2 className="text-xl font-semibold mb-4">Game Actions</h2>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={claimSolution}
+                                    disabled={room?.roundWinner !== null}
+                                    className={`w-full p-4 rounded-lg transition-colors text-lg font-semibold ${
+                                        room?.roundWinner === currentPlayer?.id
+                                            ? 'bg-green-500 text-white'
+                                            : room?.roundWinner !== null
+                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    }`}
+                                >
+                                    {room?.roundWinner === currentPlayer?.id ? '🎉 You won this round!' : 'I found a solution!'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            onClick={leaveRoom}
+                            className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                            Leave Game
+                        </button>
+                    </div>
+
+                    <div className="mt-8 bg-white rounded-lg p-4 shadow-md">
+                        <h3 className="font-semibold mb-2">How to Play:</h3>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                            <li>• Use all four numbers exactly once with +, -, ×, ÷ to make 24</li>
+                            <li>• You can use parentheses to change the order of operations</li>
+                            <li>• First player to find a solution and click the button scores a point</li>
+                            <li>• Examples: (8 + 4) × 2 = 24, or 6 × 3 + 4 + 2 = 24</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(Make24Multiplayer));
+    </script>
+</body>
+</html>
