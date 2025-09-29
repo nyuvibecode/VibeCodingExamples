@@ -1,5 +1,8 @@
 # Vibe Coding Hackathon Resources
 
+## 🎙️ Presentations
+**Kickoff** - [[slides]](https://docs.google.com/presentation/d/1IsNzGEAfMPr5f6jwQ6ePVrL560r_8gN4i24ojO6NjZE/edit?usp=sharing) [[recording]](https://drive.google.com/file/d/1LbS1KWQrskK2SPZC32OLz5nx2bG1NpPO/view?usp=drive_link) [[summary]](https://docs.google.com/document/d/1u4vYx87usg4Cw01ywGhHVO8I-epPNkk2DIyPlUbnbc8/edit?usp=sharing)
+
 ## 🌐 Vibe Coding Tools
 
 ### 🤖 AI Assistants
