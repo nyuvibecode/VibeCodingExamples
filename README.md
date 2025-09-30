@@ -10,6 +10,7 @@
 * **Claude (Anthropic)** - Long-context reasoning partner, great for multi-file projects.
 * **GitHub Copilot** - IDE-native autocomplete and inline code helper.
 * **Gemini (Google)** - Multimodal, integrates with Google Docs/Sheets.
+* **DeepSeek** - Open-source AI coding model designed for efficiency and transparency.
 
 ### 💻 Development Environments & Builders
 
