@@ -46,7 +46,7 @@ export class GameEngine {
       avatar,
       color,
       score: 0,
-      isActive: existingPlayers.length === 0, // First player is active
+      isActive: false,
       isReady: false,
     });
 
@@ -77,10 +77,7 @@ export class GameEngine {
 
     if (!updatedRoom) return null;
 
-    // Set first player as active
-    if (players.length > 0) {
-      await storage.updatePlayer(players[0].id, { isActive: true });
-    }
+    // Free-for-all mode: no active player; all can submit simultaneously
 
     // Start timer
     this.startRoundTimer(room.id, 60);
@@ -191,17 +188,7 @@ export class GameEngine {
         currentNumbers: newNumbers,
       });
 
-      // Rotate active player
-      const players = await storage.getPlayersByRoomId(roomId);
-      const currentActiveIndex = players.findIndex(p => p.isActive);
-      const nextActiveIndex = (currentActiveIndex + 1) % players.length;
-
-      // Update player states
-      for (let i = 0; i < players.length; i++) {
-        await storage.updatePlayer(players[i].id, { 
-          isActive: i === nextActiveIndex 
-        });
-      }
+      // Free-for-all mode: do not rotate an active player; all players remain eligible to submit
 
       // Start new timer
       this.startRoundTimer(roomId, 60);
